@@ -93,6 +93,23 @@ volumes:
 
 This is the full application stack. SQLite is embedded, so the database is the file `/data/condivisa.sqlite`; no separate database container is required. `UPLOAD_DIR` is the directory for receipt photos and PDF attachments. The `condivisa_data` volume preserves the database and attachments when the container is recreated. Back up the entire volume with the container stopped.
 
+### Website, API, and Synology reverse proxy
+
+The **same `app` container** serves the built website and PWA files at `/` and the API at `/api/*`, all on container port `3000`. There is no separate web server or frontend container. Visitors open your HTTPS hostname in a browser; Safari can then add the PWA to the iPhone Home Screen. The browser downloads the app files from this server, not from an app store.
+
+For the Compose example above, create one reverse proxy rule in **DSM 7 → Control Panel → Login Portal → Advanced → Reverse Proxy**:
+
+| Synology field | Value |
+| --- | --- |
+| Source protocol | `HTTPS` |
+| Source hostname | `spese.example.com` (replace with your hostname) |
+| Source port | `443` |
+| Destination protocol | `HTTP` |
+| Destination hostname | `127.0.0.1` |
+| Destination port | `3000` |
+
+Assign a valid certificate to the source hostname and set `PUBLIC_ORIGIN=https://spese.example.com` in the stack. Forward the entire hostname to the container: both `/` and `/api/*` must reach it. If you change `HOST_PORT` in `compose.portainer.yaml`, use that host port as the Synology destination port; the container's internal port remains `3000`. Only HTTPS port `443` needs to be reachable externally for this hostname. See [Synology's reverse proxy settings](https://kb.synology.com/en-global/DSM/help/DSM/AdminCenter/system_login_portal_advanced) for the DSM fields.
+
 1. Configure a public HTTPS hostname and a valid certificate in your NAS reverse proxy. Forward HTTP requests to the chosen NAS port (for example, `3000`) while preserving `Host` and `X-Forwarded-Proto`.
 2. If you prefer [`compose.portainer.yaml`](compose.portainer.yaml), set `PUBLIC_ORIGIN` and `SETUP_KEY` in Portainer, and optionally `HOST_PORT`. `IMAGE` defaults to `ghcr.io/p4xx07/condivisa:v0.2.0`. The image is public and can be pulled without GHCR credentials.
 3. To build locally, use `compose.yaml` with the same variables and run `docker compose up -d --build`.
