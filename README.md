@@ -79,13 +79,17 @@ services:
       PUBLIC_ORIGIN: https://spese.example.com
       SETUP_KEY: sostituisci-con-una-chiave-casuale-di-almeno-24-caratteri
       PORT: "3000"
+      # Database SQLite incluso nell'app, persistente nel volume qui sotto.
       DB_PATH: /data/condivisa.sqlite
+      # Foto e PDF allegati alle spese, nello stesso volume.
       UPLOAD_DIR: /data/uploads
     volumes:
       - condivisa_data:/data
 volumes:
   condivisa_data:
 ```
+
+Questo è lo stack completo: Condivisa usa **SQLite integrato**, quindi il database è il file `/data/condivisa.sqlite` e non richiede un altro servizio Docker. `UPLOAD_DIR` indica la cartella `/data/uploads` per foto degli scontrini e PDF allegati alle spese; non è una cartella per caricare l'app. Il volume `condivisa_data` conserva sia il database sia gli allegati quando aggiorni o ricrei il container. Per un backup completo salva l'intero volume con il container fermo.
 
 1. Configura un hostname pubblico HTTPS nel reverse proxy del NAS, con certificato valido. Inoltra le richieste HTTP al NAS sulla porta scelta, per esempio `3000`, conservando `Host` e `X-Forwarded-Proto`.
 2. Se preferisci usare `compose.portainer.yaml`, imposta `PUBLIC_ORIGIN`, `SETUP_KEY` e, se necessario, `HOST_PORT` nello stack. `IMAGE` è facoltativa e predefinita a `ghcr.io/p4xx07/condivisa:v0.2.0`. L'immagine è pubblica e si scarica senza login GHCR.
