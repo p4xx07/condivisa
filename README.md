@@ -4,6 +4,30 @@ App per dividere spese di gruppo, installabile dal browser su iPhone e Android. 
 
 Ispirazione funzionale: [Spliit](https://github.com/spliit-app/spliit) di Sebastien Castiel (licenza MIT). Condivisa è un'implementazione autonoma distribuita con licenza MIT.
 
+## Anteprima
+
+Schermate reali della versione `v0.1.1`, acquisite con un gruppo e persone di esempio. Nessun dato personale è incluso.
+
+### Panoramica e spese
+
+![Panoramica desktop di Condivisa, con un gruppo e tre spese](docs/screenshots/panoramica-desktop.png)
+
+![Spese del gruppo Weekend a Lisbona su desktop](docs/screenshots/spese-desktop.png)
+
+### Permessi per persona
+
+![Sezione permessi del gruppo con un membro collaboratore](docs/screenshots/permessi-desktop.png)
+
+![Editor dei permessi di un membro](docs/screenshots/editor-permessi.png)
+
+### Tema AMOLED su mobile
+
+| Panoramica | Spese e azione centrale | Nuova spesa |
+| --- | --- | --- |
+| ![Panoramica mobile con tema AMOLED](docs/screenshots/panoramica-amoled-mobile.png) | ![Spese mobile con pulsante centrale rialzato](docs/screenshots/spese-amoled-mobile.png) | ![Modulo nuova spesa con tema AMOLED](docs/screenshots/nuova-spesa-amoled-mobile.png) |
+
+Le immagini sono riproducibili con [`e2e/showcase.mjs`](e2e/showcase.mjs) su un'istanza temporanea con database vuoto.
+
 ## Funzioni
 
 - Account personali, sessioni protette da cookie, inviti monouso validi 7 giorni.
