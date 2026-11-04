@@ -1,0 +1,16 @@
+services:
+  app:
+    image: "${IMAGE:?set a versioned GHCR image}"
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${HOST_PORT:-3000}:3000"
+    environment:
+      PUBLIC_ORIGIN: "${PUBLIC_ORIGIN:?set the public HTTPS origin}"
+      SETUP_KEY: "${SETUP_KEY}"
+      PORT: "3000"
+      DB_PATH: /data/condivisa.sqlite
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - condivisa_data:/data
+volumes:
+  condivisa_data:

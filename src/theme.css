@@ -1,0 +1,135 @@
+.theme-picker {
+  display: grid;
+  gap: 6px;
+  margin: 18px 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.theme-picker select {
+  min-height: 38px;
+  min-width: 150px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-interactive);
+  border-radius: var(--radius-control);
+  background: var(--surface-field);
+  color: var(--ink);
+}
+.theme-picker-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.theme-picker-compact select {
+  min-width: 120px;
+  font-size: 0.72rem;
+}
+.auth-card > .theme-picker {
+  margin: 0 0 20px;
+  justify-self: end;
+}
+@media (max-width: 600px) {
+  .theme-picker-compact > span {
+    display: none;
+  }
+  .theme-picker-compact select {
+    min-width: 92px;
+    max-width: 106px;
+    font-size: 0.68rem;
+    padding: 5px;
+  }
+}
+
+:root[data-theme="amoled"] {
+  color-scheme: dark;
+  --ink: #eff8f2;
+  --muted: #a0b3a7;
+  --green: #52e3ad;
+  --green-dark: #31b98b;
+  --light: #10271c;
+  --line: #23352b;
+  --surface: #0b100d;
+  --canvas: #000000;
+  --wash: #10271c;
+  --surface-raised: #0b100d;
+  --surface-interactive: #132017;
+  --surface-field: #0c1710;
+  --surface-field-disabled: #101713;
+  --surface-hover: #17251c;
+  --surface-selected: #143523;
+  --surface-tint: #10291c;
+  --surface-panel: #0b1710;
+  --surface-inset: #1b2b20;
+  --surface-danger: #381a1a;
+  --surface-toast: #173327;
+  --text-strong: #eff8f2;
+  --text-body: #d7e9dc;
+  --text-subtle: #a0b3a7;
+  --text-faint: #91a99a;
+  --text-accent-strong: #d6f4df;
+  --text-on-primary: #031b12;
+  --text-on-visual: #ffffff;
+  --accent-text: #52e3ad;
+  --accent-soft-text: #58dba2;
+  --danger-text: #ffb1a5;
+  --icon-muted: #9aafa1;
+  --border-interactive: #304639;
+  --border-card: #23352b;
+  --border-danger: #6c3530;
+  --focus-border: #4de0a4;
+  --focus-ring: #4de0a433;
+  --tone-mint-bg: #10291c;
+  --tone-mint-fg: #58dba2;
+  --tone-peach-bg: #352519;
+  --tone-peach-fg: #efb878;
+  --tone-lavender-bg: #292344;
+  --tone-lavender-fg: #c5b6ff;
+  --tone-sky-bg: #183447;
+  --tone-sky-fg: #abdafa;
+  --tone-rose-bg: #3b2230;
+  --tone-rose-fg: #fac0d2;
+  --avatar-mint-bg: #184332;
+  --avatar-lavender-bg: #343052;
+  --avatar-peach-bg: #483121;
+  --avatar-sky-bg: #1c3547;
+  --avatar-rose-bg: #472a36;
+  --avatar-text: #e9f7ee;
+  --bar-track: #1b2b20;
+  --bar-fill: #58dba2;
+  --bar-fill-warm: #efb878;
+  --toggle-off: #314138;
+  --toggle-on: #21b986;
+  --activity-dot: #58dba2;
+  --activity-ring: #123624;
+  --invite-page: #000000;
+  --modal-overlay: #000d;
+  --brand-mark-inverse-bg: #e7fff1;
+  --brand-mark-inverse-fg: #118167;
+  --primary: #21b986;
+  --primary-strong: #1aa878;
+  --positive: #58d99d;
+  --negative: #ff948b;
+  --border-soft: #23352b;
+  --accent-wash: #10291d;
+  --canvas-alt: #080d0a;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+:root[data-theme="amoled"] .welcome-banner {
+  background: linear-gradient(112deg, #102d20, #0b1d18 58%, #111a27);
+}
+:root[data-theme="amoled"] .art-a {
+  background: #164834;
+}
+:root[data-theme="amoled"] .art-b {
+  background: #0d392b;
+}
+:root[data-theme="amoled"] .art-card {
+  box-shadow: 0 15px 35px #000a;
+}
+:root[data-theme="amoled"] .auth-visual {
+  background: linear-gradient(145deg, #06251c, #073323 60%, #020f0c);
+}
