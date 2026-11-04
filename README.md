@@ -1,72 +1,74 @@
 # Condivisa
 
-App per dividere spese di gruppo, installabile dal browser su iPhone e Android. Frontend React PWA, API Fastify e database SQLite: il server è autonomo. Spliit è servito da riferimento funzionale; questo repository non usa il suo backend.
+Condivisa is a self-hosted group expense app that can be installed from a browser on iPhone and Android. It has a React PWA frontend, a Fastify API, and an embedded SQLite database. It is an independent implementation: it does not use the Spliit backend.
 
-Ispirazione funzionale: [Spliit](https://github.com/spliit-app/spliit) di Sebastien Castiel (licenza MIT). Condivisa è un'implementazione autonoma distribuita con licenza MIT.
+The product takes functional inspiration from [Spliit](https://github.com/spliit-app/spliit) by Sebastien Castiel (MIT license). Condivisa is distributed under the MIT license. **The app interface is currently in Italian.**
 
-## Anteprima
+## Screenshots
 
-Schermate reali della versione `v0.2.0`, acquisite con gruppi e persone di esempio. Nessun dato personale è incluso.
+These are real screenshots of `v0.2.0`, captured with sample groups and people. They contain no personal data.
 
-### Panoramica e spese
+### Overview and expenses
 
-![Panoramica desktop di Condivisa, con un gruppo e tre spese](docs/screenshots/panoramica-desktop.png)
+![Condivisa desktop overview with one group and three expenses](docs/screenshots/panoramica-desktop.png)
 
-![Spese del gruppo Weekend a Lisbona su desktop](docs/screenshots/spese-desktop.png)
+![Expenses for the Weekend a Lisbona group on desktop](docs/screenshots/spese-desktop.png)
 
-![Saldi con opzione Semplifica spese attiva](docs/screenshots/saldi-desktop.png)
+![Balances with expense simplification enabled](docs/screenshots/saldi-desktop.png)
 
-### Permessi per persona
+### Permissions per person
 
-![Sezione permessi del gruppo con un membro collaboratore](docs/screenshots/permessi-desktop.png)
+![Group permissions with a collaborator](docs/screenshots/permessi-desktop.png)
 
-![Editor dei permessi di un membro](docs/screenshots/editor-permessi.png)
+![Member permission editor](docs/screenshots/editor-permessi.png)
 
-### Tema AMOLED su mobile
+### AMOLED theme on mobile
 
-| Panoramica | Spese e azione centrale | Nuova spesa |
+| Overview | Expenses and primary action | New expense |
 | --- | --- | --- |
-| ![Panoramica mobile con tema AMOLED](docs/screenshots/panoramica-amoled-mobile.png) | ![Spese mobile con pulsante centrale rialzato](docs/screenshots/spese-amoled-mobile.png) | ![Modulo nuova spesa con tema AMOLED](docs/screenshots/nuova-spesa-amoled-mobile.png) |
+| ![Mobile overview in AMOLED mode](docs/screenshots/panoramica-amoled-mobile.png) | ![Mobile expenses with the raised central action](docs/screenshots/spese-amoled-mobile.png) | ![New expense form in AMOLED mode](docs/screenshots/nuova-spesa-amoled-mobile.png) |
 
-Con più gruppi, l'azione centrale chiede dove registrare la spesa:
+When you can add expenses to multiple groups, the central action asks which group to use:
 
-![Scelta del gruppo per la nuova spesa su mobile AMOLED](docs/screenshots/scelta-gruppo-amoled-mobile.png)
+![Mobile group picker in AMOLED mode](docs/screenshots/scelta-gruppo-amoled-mobile.png)
 
-![Saldi del gruppo su mobile AMOLED](docs/screenshots/saldi-amoled-mobile.png)
+![Mobile group balances in AMOLED mode](docs/screenshots/saldi-amoled-mobile.png)
 
-Le immagini sono riproducibili con [`e2e/showcase.mjs`](e2e/showcase.mjs) su un'istanza temporanea con database vuoto.
+You can reproduce these screenshots with [`e2e/showcase.mjs`](e2e/showcase.mjs) against a temporary instance with an empty database.
 
-## Funzioni
+## Features
 
-- Account personali, sessioni protette da cookie, inviti monouso validi 7 giorni.
-- Cambio password personale e reset da parte di un amministratore, con chiusura delle sessioni precedenti.
-- Isolamento dei gruppi verificato da ogni endpoint API. Un invitato non può creare gruppi propri salvo autorizzazione esplicita dell'amministratore.
-- Permessi per persona e gruppo: visualizzare, aggiungere spese, modificare le proprie o tutte, gestire il gruppo e i membri, esportare, eliminare.
-- Partecipanti distinti dagli account e associabili da **Persone**. Quote uguali, a pesi, percentuali o importi esatti; saldi e rimborsi.
-- Opzione **Semplifica spese** in **Saldi**: attiva per impostazione predefinita, compensa i saldi fra tutti; disattivata mostra i rimborsi diretti tra partecipanti, compensati a coppie. La scelta è salvata per gruppo e modificabile da chi gestisce il gruppo.
-- Spese ricorrenti, categorie, statistiche, attività, allegati immagine/PDF, export CSV/JSON e cambio valuta su richiesta.
-- Gruppi eliminati nascosti e ripristinabili dall'amministratore in **Utenti e accessi**. Non esiste eliminazione definitiva automatica.
-- Tema chiaro e tema scuro AMOLED con sfondo nero, selezionabili anche prima del login; modalità automatica in base al dispositivo.
-- Pulsante rapido chiaro/AMOLED nella barra superiore; scelta completa, inclusa la modalità automatica, nell'account. Avatar Avataaars generati localmente dai nomi e colori dei gruppi stabili anche se cambia l'ordine della lista.
-- Azione mobile centrale “Nuova spesa” quando hai un gruppo scrivibile; scelta del gruppo se ne hai più di uno. Se non hai gruppi scrivibili ma puoi crearne, diventa “Nuovo gruppo”.
+- Personal accounts, cookie-based sessions, and single-use invitations valid for seven days.
+- Personal password changes and administrator password resets, with older sessions invalidated.
+- Group access checked by every API endpoint. An invited user cannot create their own groups unless an administrator grants that permission.
+- Per-person, per-group permissions for viewing, adding expenses, editing own or all expenses, managing groups and members, exporting, and deleting groups.
+- Expense participants can be linked to user accounts. Split costs equally, by shares, by percentage, or by exact amounts; view balances and suggested reimbursements.
+- A group-level **Simplify expenses** option in Balances. Enabled by default, it offsets balances across the whole group; disabled, it shows direct reimbursements between participants, offset pairwise. Group managers can change the setting.
+- Recurring expenses, categories, statistics, activity history, image/PDF attachments, CSV/JSON export, and currency conversion on request.
+- Soft-deleted groups can be restored by an administrator from the user administration page. There is no automatic permanent deletion.
+- Light and true-black AMOLED themes, plus a system setting. The top bar has a compact light/AMOLED toggle; the full choice is in account settings and is also available before login.
+- Avataaars generated locally from names, and group colors that remain stable when the group list changes order.
+- A central mobile **New expense** action for users who can add expenses. It opens a group picker when needed and becomes **New group** only when no writable group is available and group creation is allowed.
 
-## Sviluppo locale
+## Local development
 
-Richiede Node.js 26 e npm.
+Requires Node.js 26 and npm.
 
 ```sh
 npm ci
 cp .env.example .env
-# In due terminali:
+# Run these in two terminals:
 set -a; . ./.env; set +a; npm run dev:api
 npm run dev
 ```
 
-Aprire `http://127.0.0.1:5173`. Alla prima apertura, creare l'amministratore usando `SETUP_KEY`. La chiave deve essere lunga, casuale e privata; il server la usa solo per la configurazione iniziale. Lo stack Portainer richiede comunque che resti impostata. Per la produzione il database e gli allegati stanno in `/data`; fai il backup di **entrambi**. Con SQLite in WAL, esegui il backup con il container fermo oppure usa la API di backup SQLite, non copiare il solo file principale mentre il server è attivo.
+Open `http://127.0.0.1:5173`. On first launch, create the administrator with `SETUP_KEY`. Use a long, random, private value. The server uses it only for initial setup; the provided Portainer Compose file still requires the variable to be set on every deployment.
+
+In production, the database and attachments live under `/data`. Back up **both**. SQLite uses WAL mode: stop the container before copying the complete data volume, or use SQLite's backup API. Do not copy only the main database file while the server is running.
 
 ## NAS / Portainer
 
-In **Portainer → Stacks**, incolla questo Compose. Prima del deploy sostituisci `spese.example.com` e la chiave di esempio con il tuo hostname e una chiave casuale di almeno 24 caratteri. Il tag dell'immagine è fissato a `v0.2.0`.
+Paste this complete stack into **Portainer → Stacks**. Before deploying, replace `spese.example.com` with your HTTPS hostname and replace the example setup key with a random value of at least 24 characters. The image is pinned to `v0.2.0`.
 
 ```yaml
 services:
@@ -77,11 +79,11 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       PUBLIC_ORIGIN: https://spese.example.com
-      SETUP_KEY: sostituisci-con-una-chiave-casuale-di-almeno-24-caratteri
+      SETUP_KEY: replace-with-a-random-setup-key-at-least-24-characters-long
       PORT: "3000"
-      # Database SQLite incluso nell'app, persistente nel volume qui sotto.
+      # SQLite database included in the app, stored in the volume below.
       DB_PATH: /data/condivisa.sqlite
-      # Foto e PDF allegati alle spese, nello stesso volume.
+      # Photos and PDFs attached to expenses, stored in the same volume.
       UPLOAD_DIR: /data/uploads
     volumes:
       - condivisa_data:/data
@@ -89,37 +91,37 @@ volumes:
   condivisa_data:
 ```
 
-Questo è lo stack completo: Condivisa usa **SQLite integrato**, quindi il database è il file `/data/condivisa.sqlite` e non richiede un altro servizio Docker. `UPLOAD_DIR` indica la cartella `/data/uploads` per foto degli scontrini e PDF allegati alle spese; non è una cartella per caricare l'app. Il volume `condivisa_data` conserva sia il database sia gli allegati quando aggiorni o ricrei il container. Per un backup completo salva l'intero volume con il container fermo.
+This is the full application stack. SQLite is embedded, so the database is the file `/data/condivisa.sqlite`; no separate database container is required. `UPLOAD_DIR` is the directory for receipt photos and PDF attachments. The `condivisa_data` volume preserves the database and attachments when the container is recreated. Back up the entire volume with the container stopped.
 
-1. Configura un hostname pubblico HTTPS nel reverse proxy del NAS, con certificato valido. Inoltra le richieste HTTP al NAS sulla porta scelta, per esempio `3000`, conservando `Host` e `X-Forwarded-Proto`.
-2. Se preferisci usare `compose.portainer.yaml`, imposta `PUBLIC_ORIGIN`, `SETUP_KEY` e, se necessario, `HOST_PORT` nello stack. `IMAGE` è facoltativa e predefinita a `ghcr.io/p4xx07/condivisa:v0.2.0`. L'immagine è pubblica e si scarica senza login GHCR.
-3. Per costruire localmente usa `compose.yaml` con le stesse variabili e `docker compose up -d --build`.
-4. Apri l'hostname HTTPS, configura l'amministratore e crea il primo gruppo. Il volume `condivisa_data` conserva database e allegati tra ricreazioni dello stack.
-5. Su iPhone apri l'URL in **Safari**, tocca **Condividi → Aggiungi alla schermata Home**. Su Android usa il comando **Installa app** del browser. Il browser deve raggiungere il server via HTTPS; la PWA non sincronizza spese offline.
+1. Configure a public HTTPS hostname and a valid certificate in your NAS reverse proxy. Forward HTTP requests to the chosen NAS port (for example, `3000`) while preserving `Host` and `X-Forwarded-Proto`.
+2. If you prefer [`compose.portainer.yaml`](compose.portainer.yaml), set `PUBLIC_ORIGIN` and `SETUP_KEY` in Portainer, and optionally `HOST_PORT`. `IMAGE` defaults to `ghcr.io/p4xx07/condivisa:v0.2.0`. The image is public and can be pulled without GHCR credentials.
+3. To build locally, use `compose.yaml` with the same variables and run `docker compose up -d --build`.
+4. Open the HTTPS hostname, set up the administrator, and create your first group. The named volume preserves data across stack updates.
+5. On iPhone, open the URL in **Safari** and choose **Share → Add to Home Screen**. On Android, use the browser's **Install app** action. The browser must reach the server over HTTPS. The PWA does not sync expense changes offline.
 
-`PUBLIC_ORIGIN` deve essere l'origine esatta usata dal browser (schema e hostname, senza slash finale). La API la usa per verificare l'origine delle scritture, generare link di invito e impostare il cookie Secure. Se cambi hostname, aggiorna `PUBLIC_ORIGIN` e ricrea il container. Il certificato è gestito separatamente dal reverse proxy.
+`PUBLIC_ORIGIN` must exactly match the origin used by the browser (scheme and hostname, without a trailing slash). The API uses it to validate write requests, generate invitation links, and set Secure cookies. If the hostname changes, update `PUBLIC_ORIGIN` and recreate the container. The reverse proxy manages the certificate separately.
 
-Il Compose espone la porta solo su `127.0.0.1` del NAS, per il reverse proxy installato sullo stesso host. Se il proxy gira in un altro container, adatta la rete Docker e il binding della porta. Non esporre il container senza HTTPS su Internet. In produzione il server rifiuta l'avvio senza `PUBLIC_ORIGIN` HTTPS e, al primo avvio, senza `SETUP_KEY` sufficientemente lunga.
+The example binds port `3000` only to `127.0.0.1` on the NAS, for a reverse proxy running on the same host. If your proxy runs in another container, adjust the Docker network and port binding. Do not expose the container directly to the internet without HTTPS. In production, the server refuses to start without an HTTPS `PUBLIC_ORIGIN`, and it requires a setup key of at least 24 characters for initial setup.
 
-## Verifiche
+## Verification
 
 ```sh
 npm run lint
 npm run test:api
 npm run build
 node e2e/smoke.mjs
-# Con l'immagine di produzione avviata su 127.0.0.1:13000:
+# With the production image running at 127.0.0.1:13000:
 node e2e/production.mjs
 ```
 
-Il test browser richiede un server di sviluppo attivo e un browser Playwright disponibile. Il test di produzione verifica manifest, service worker e assenza di richieste a font esterni. Il Dockerfile produce una singola immagine multiarchitettura; `.github/workflows/release.yml` esegue lint, test API, build e test browser prima di pubblicarla su GHCR al push di un tag `v*`. Il rilascio pubblica immagini per `linux/amd64` e `linux/arm64`; controlla l'esito della pipeline prima di aggiornare lo stack.
+The browser test requires a running development server and an available Playwright browser. The production test checks the manifest, service worker, and absence of external font requests. [The release workflow](.github/workflows/release.yml) runs lint, API tests, the build, and browser tests before publishing to GHCR on a `v*` tag. It publishes `linux/amd64` and `linux/arm64` images; check that the workflow succeeds before updating your stack.
 
-## Note operative
+## Operational notes
 
-I permessi sono applicati lato server. La revoca di un membro è immediata anche se ha ancora una sessione valida. I link di invito sono monouso e devono essere condivisi solo con il destinatario. Il rate limit per account/invito è in memoria e presuppone un solo container; configura anche un limite per IP nel reverse proxy. Le migrazioni del database sono numerate ed eseguite in transazione all'avvio; il server rifiuta database creati da una versione più recente dell'app. Fai un backup prima di aggiornare l'immagine.
+Permissions are enforced by the server. Removing a group member takes effect immediately even if that person still has a valid session. Invitation links are single-use and should be shared only with the intended recipient. Account/invitation rate limits are held in memory and assume a single app container; also configure a per-IP limit at the reverse proxy. Database migrations are versioned and run transactionally at startup. The server refuses to open a database created by a newer app version. Back up data before upgrading.
 
-La lista delle spese ricorrenti è aggiornata quando qualcuno apre spese, saldi o statistiche del gruppo. Per un gruppo inattivo non viene eseguita una pianificazione in background. Il cambio valuta consulta Frankfurter e richiede accesso Internet dal server.
+Recurring expenses are materialized when someone opens the group's expenses, balances, or statistics. Inactive groups do not have a background scheduler. Currency conversion uses Frankfurter and requires internet access from the server.
 
-Il manifest PWA usa colori di avvio statici condivisi dai due temi; dopo il caricamento, l'app aggiorna il colore dell'interfaccia in base alla scelta salvata. La schermata di avvio dipende dal browser e va controllata sul dispositivo iPhone o Android effettivo.
+The PWA manifest uses static launch colors shared by both themes. After loading, the app updates the browser chrome color to match the saved choice. Check the launch screen on an actual iPhone or Android device.
 
-Gli avatar sono generati nel browser con [DiceBear](https://www.dicebear.com/) e lo stile [Avataaars di Pablo Stanley](https://avataaars.com/), utilizzabile gratuitamente anche per progetti commerciali. I nomi non vengono inviati a un servizio esterno per crearli.
+Avatars are generated in the browser with [DiceBear](https://www.dicebear.com/) and [Avataaars by Pablo Stanley](https://avataaars.com/), whose style is free for personal and commercial use. Names are not sent to an external avatar service.

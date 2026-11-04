@@ -8,12 +8,12 @@ services:
       PUBLIC_ORIGIN: "${PUBLIC_ORIGIN:?set the public HTTPS origin}"
       SETUP_KEY: "${SETUP_KEY:?set a long random setup key}"
       PORT: "3000"
-      # Database SQLite incluso nel container, salvato nel volume persistente.
+      # SQLite database included in the app, stored in the persistent volume.
       DB_PATH: /data/condivisa.sqlite
-      # File allegati alle spese (foto e PDF), salvati nello stesso volume.
+      # Expense attachments (photos and PDFs), stored in the same volume.
       UPLOAD_DIR: /data/uploads
     volumes:
-      # Conserva database e allegati quando il container viene ricreato.
+      # Keep the database and attachments when the container is recreated.
       - condivisa_data:/data
 volumes:
   condivisa_data:
