@@ -42,6 +42,9 @@ export default function App() {
   const groupMatch = route.match(/^group\/([^/]+)(?:\/(\w+))?/)
   const activeGroup = groupMatch ? groups.find((group) => group.id === groupMatch[1]) : null
   const page = groupMatch ? 'group' : route === 'users' ? 'users' : route === 'profile' ? 'profile' : 'home'
+  const canCreateGroup = user.isAdmin || user.canCreateGroups
+  const canAddInGroup = Boolean(activeGroup?.canAddExpense)
+  const showPrimaryAction = canAddInGroup || canCreateGroup
   return <div className="app-shell">
     <aside className={`sidebar ${menuOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-top"><button className="brand" onClick={() => go('home')}><span className="brand-mark">c</span><span>condivisa<span className="brand-dot">.</span></span></button><button className="icon-button close-sidebar" onClick={() => setMenuOpen(false)} aria-label="Chiudi menu"><X size={20} /></button></div>
@@ -63,7 +66,12 @@ export default function App() {
         {groupMatch && <GroupPage key={groupMatch[1]} groupId={groupMatch[1]} tab={groupMatch[2] || 'expenses'} user={user} onTab={(tab) => go(`group/${groupMatch[1]}/${tab}`)} onDeleted={() => { setRefresh((n) => n + 1); go('home') }} onNotice={setNotice} />}
       </div>
     </main>
-    <nav className="mobile-bottom" aria-label="Navigazione mobile"><button className={page === 'home' ? 'active' : ''} onClick={() => go('home')}><Home size={22} /><span>Home</span></button><button className={page === 'group' ? 'active' : ''} onClick={() => go(activeGroup ? `group/${activeGroup.id}` : 'home')}><UsersRound size={22} /><span>Gruppi</span></button>{(activeGroup || user.isAdmin || user.canCreateGroups) && <button className="mobile-add" onClick={() => { if (activeGroup) go(`group/${activeGroup.id}/add`); else setCreateOpen(true) }}><Plus size={25} /><span>Aggiungi</span></button>}<button className={page === 'users' || page === 'profile' ? 'active' : ''} onClick={() => go(user.isAdmin ? 'users' : 'profile')}><Settings2 size={22} /><span>{user.isAdmin ? 'Accessi' : 'Account'}</span></button></nav>
+    <nav className={`mobile-bottom ${showPrimaryAction ? 'has-primary' : ''}`} aria-label="Navigazione mobile">
+      <button className={page === 'home' ? 'active' : ''} onClick={() => go('home')}><Home size={22} /><span>Home</span></button>
+      <button className={page === 'group' ? 'active' : ''} onClick={() => go(activeGroup ? `group/${activeGroup.id}` : 'home')}><UsersRound size={22} /><span>Gruppi</span></button>
+      {showPrimaryAction && <button className="mobile-add" aria-label={canAddInGroup ? 'Aggiungi spesa' : 'Crea gruppo'} onClick={() => { if (canAddInGroup && activeGroup) go(`group/${activeGroup.id}/add`); else setCreateOpen(true) }}><span className="mobile-add-disc"><Plus size={27} strokeWidth={2.4} /></span><span>{canAddInGroup ? 'Nuova spesa' : 'Nuovo gruppo'}</span></button>}
+      <button className={page === 'users' || page === 'profile' ? 'active' : ''} onClick={() => go(user.isAdmin ? 'users' : 'profile')}><Settings2 size={22} /><span>{user.isAdmin ? 'Accessi' : 'Account'}</span></button>
+    </nav>
     {createOpen && <CreateGroup onClose={() => setCreateOpen(false)} onCreated={(id) => { setCreateOpen(false); setRefresh((n) => n + 1); go(`group/${id}`) }} />}
     {notice && <Notice message={notice} onClose={() => setNotice('')} />}
   </div>

@@ -178,8 +178,10 @@ export function setMembership(groupId, userId, permissions) {
 export function visibleGroups(user) {
   return all(`SELECT DISTINCT g.id,g.name,g.currency,g.information,g.owner_id AS ownerId,g.created_at AS createdAt,
     (SELECT COUNT(*) FROM participants p WHERE p.group_id=g.id) AS participantCount,
-    (SELECT COUNT(*) FROM expenses e WHERE e.group_id=g.id) AS expenseCount
+    (SELECT COUNT(*) FROM expenses e WHERE e.group_id=g.id) AS expenseCount,
+    CASE WHEN g.owner_id=? OR ?=1 THEN 1 ELSE COALESCE(m.can_add_expense,0) END AS canAddExpense
     FROM groups g LEFT JOIN memberships m ON m.group_id=g.id AND m.user_id=?
     WHERE g.deleted_at IS NULL AND (g.owner_id=? OR ?=1 OR (m.user_id IS NOT NULL AND m.can_view=1))
-    ORDER BY g.created_at DESC`, user.id, user.id, user.isAdmin)
+    ORDER BY g.created_at DESC`, user.id, user.isAdmin, user.id, user.id, user.isAdmin)
+    .map((group) => ({ ...group, canAddExpense: Boolean(group.canAddExpense) }))
 }

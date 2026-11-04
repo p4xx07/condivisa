@@ -1,5 +1,5 @@
 export type User = { id: string; username: string; name: string; isAdmin: boolean; canCreateGroups: boolean; disabled?: boolean; createdAt?: string }
-export type Group = { id: string; name: string; currency: string; information: string; ownerId: string; createdAt: string; participantCount?: number; expenseCount?: number }
+export type Group = { id: string; name: string; currency: string; information: string; ownerId: string; createdAt: string; participantCount?: number; expenseCount?: number; canAddExpense?: boolean }
 export type Participant = { id: string; name: string; userId?: string | null }
 export type Permissions = { canView: boolean; canAddExpense: boolean; canEditOwn: boolean; canEditAll: boolean; canManageGroup: boolean; canManageMembers: boolean; canExport: boolean; canDeleteGroup: boolean }
 export type Expense = { id: string; title: string; amountMinor: number; originalAmountMinor?: number | null; originalCurrency?: string | null; exchangeRate?: number | null; date: string; category: string; payerId: string; splitMode: 'EQUAL' | 'SHARES' | 'PERCENT' | 'EXACT'; notes: string; isReimbursement: boolean; createdBy: string | null; creatorName: string | null; recurrenceId: string | null; shares: { participantId: string; amountMinor: number; weight: number }[]; documents: { id: string; name: string; mimeType: string; size: number }[] }
