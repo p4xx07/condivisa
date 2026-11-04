@@ -51,6 +51,7 @@ test('permissions are enforced on direct API requests and revoked immediately', 
   assert.equal((await request('PATCH', `/api/groups/${groupId}/participants/${bruno.id}`, { userId: registered.body.user.id }, admin)).status, 200)
   assert.equal((await request('GET', `/api/groups/${groupId}`, undefined, guest)).body.participants.find((row) => row.id === bruno.id).userId, registered.body.user.id)
   assert.equal((await request('GET', `/api/groups/${groupId}`, undefined, guest)).status, 200)
+  assert.equal((await request('PATCH', `/api/groups/${groupId}`, { simplifySettlements: false }, guest)).status, 403)
   assert.equal((await request('PATCH', `/api/groups/${groupId}/expenses/${adminExpense.body.id}`, expense, guest)).status, 403)
   assert.equal((await request('GET', `/api/groups/${groupId}/export/json`, undefined, guest)).status, 403)
   const ownExpense = await request('POST', `/api/groups/${groupId}/expenses`, { ...expense, title: 'Taxi' }, guest)
@@ -67,6 +68,26 @@ test('permissions are enforced on direct API requests and revoked immediately', 
   const balances = await request('GET', `/api/groups/${groupId}/balances`, undefined, guest)
   assert.equal(balances.status, 200)
   assert.equal(balances.body.balances.reduce((sum, row) => sum + row.balanceMinor, 0), 0)
+  assert.equal((await request('PATCH', `/api/groups/${groupId}`, { simplifySettlements: false }, admin)).body.group.simplifySettlements, false)
+  assert.equal((await request('GET', `/api/groups/${groupId}`, undefined, guest)).body.group.simplifySettlements, false)
+  assert.equal((await request('PATCH', `/api/groups/${groupId}`, { simplifySettlements: 'false' }, admin)).status, 400)
+  const chain = await request('POST', '/api/groups', { name: 'Catena rimborsi', participants: [{ name: 'A' }, { name: 'B' }, { name: 'C' }] }, admin)
+  assert.equal(chain.status, 200)
+  const chainId = chain.body.id
+  const chainPeople = (await request('GET', `/api/groups/${chainId}`, undefined, admin)).body.participants
+  const ids = Object.fromEntries(chainPeople.map((person) => [person.name, person.id]))
+  for (const [payer, debtor] of [['B', 'A'], ['C', 'B']]) {
+    const result = await request('POST', `/api/groups/${chainId}/expenses`, {
+      title: `${debtor} deve a ${payer}`, amountMinor: 1000, date: '2026-11-03', category: 'Altro',
+      payerId: ids[payer], splitMode: 'EXACT', shares: [{ participantId: ids[debtor], value: 1000 }],
+    }, admin)
+    assert.equal(result.status, 200)
+  }
+  assert.deepEqual((await request('GET', `/api/groups/${chainId}/balances`, undefined, admin)).body.settlements,
+    [{ from: ids.A, to: ids.C, amountMinor: 1000 }])
+  assert.equal((await request('PATCH', `/api/groups/${chainId}`, { simplifySettlements: false }, admin)).status, 200)
+  assert.deepEqual((await request('GET', `/api/groups/${chainId}/balances`, undefined, admin)).body.settlements,
+    [{ from: ids.A, to: ids.B, amountMinor: 1000 }, { from: ids.B, to: ids.C, amountMinor: 1000 }])
   assert.equal((await request('POST', `/api/invites/${token}/register`, { username: 'another', name: 'Another', password: 'very-long-guest-password' })).status, 404)
 
   const viewer = { canView: true, canAddExpense: false, canEditOwn: false, canEditAll: false, canManageGroup: false, canManageMembers: false, canExport: false, canDeleteGroup: false }

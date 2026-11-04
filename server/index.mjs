@@ -175,7 +175,8 @@ app.post('/api/groups', async (request) => {
 
 function groupView(user, id) {
   const permissions = requireGroup(user, id)
-  const group = one('SELECT id,name,currency,information,owner_id AS ownerId,created_at AS createdAt FROM groups WHERE id=?', id)
+  const group = one('SELECT id,name,currency,information,simplify_settlements AS simplifySettlements,owner_id AS ownerId,created_at AS createdAt FROM groups WHERE id=?', id)
+  group.simplifySettlements = Boolean(group.simplifySettlements)
   const participants = all('SELECT id,name,user_id AS userId FROM participants WHERE group_id=? ORDER BY name', id)
   return { group, participants, permissions }
 }
@@ -188,9 +189,12 @@ app.patch('/api/groups/:id', async (request) => {
   currencyDigits(currency)
   if (currency !== old.currency && one('SELECT 1 FROM expenses WHERE group_id=? LIMIT 1', id))
     throw new HttpError(409, 'Non puoi cambiare valuta dopo aver registrato spese nel gruppo.')
-  run('UPDATE groups SET name=?,currency=?,information=? WHERE id=?',
+  if (body.simplifySettlements !== undefined && typeof body.simplifySettlements !== 'boolean')
+    throw new HttpError(400, 'Semplifica spese deve essere vero o falso.')
+  run('UPDATE groups SET name=?,currency=?,information=?,simplify_settlements=? WHERE id=?',
     body.name === undefined ? old.name : required(body.name, 'Nome gruppo', 50), currency,
-    body.information === undefined ? old.information : text(body.information, 10000), id)
+    body.information === undefined ? old.information : text(body.information, 10000),
+    body.simplifySettlements === undefined ? old.simplify_settlements : Number(body.simplifySettlements), id)
   activity(id, user, 'group.updated')
   return groupView(user, id)
 })
@@ -458,7 +462,8 @@ app.get('/api/groups/:id/balances', async (request) => {
   const participants = all('SELECT id,name FROM participants WHERE group_id=? ORDER BY name', id)
   const expenses = all('SELECT id,payer_id,amount_minor FROM expenses WHERE group_id=?', id)
     .map((expense) => ({ ...expense, shares: all('SELECT participant_id,amount_minor FROM expense_shares WHERE expense_id=?', expense.id) }))
-  return calculateBalances(participants, expenses)
+  const simplify = Boolean(one('SELECT simplify_settlements FROM groups WHERE id=?', id).simplify_settlements)
+  return calculateBalances(participants, expenses, simplify)
 })
 app.get('/api/groups/:id/stats', async (request) => {
   const user = requireUser(request), id = groupId(request)

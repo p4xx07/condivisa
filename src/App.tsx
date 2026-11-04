@@ -5,6 +5,7 @@ import { Auth } from './Auth'
 import { GroupPage } from './GroupPage'
 import { InstallGuide } from './InstallGuide'
 import { ThemePicker } from './ThemePicker'
+import { toneFor } from './colors'
 import { Avatar, Button, Empty, Field, Modal, Notice, SectionTitle } from './ui'
 
 function currentRoute() { return window.location.hash.replace(/^#\/?/, '') || 'home' }
@@ -15,8 +16,10 @@ export default function App() {
   const [user, setUser] = useState<User | null | undefined>(undefined)
   const [needsSetup, setNeedsSetup] = useState(false)
   const [groups, setGroups] = useState<Group[]>([])
+  const [groupsReady, setGroupsReady] = useState(false)
   const [refresh, setRefresh] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
+  const [groupPickerOpen, setGroupPickerOpen] = useState(false)
   const [notice, setNotice] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   useEffect(() => {
@@ -29,11 +32,11 @@ export default function App() {
       .then(([me, status]) => { setUser(me?.user ?? null); setNeedsSetup(status.needsSetup) })
       .catch(() => { setUser(null); setNeedsSetup(false) })
   }, [])
-  useEffect(() => { if (user) api<{ groups: Group[] }>('/groups').then((data) => setGroups(data.groups)).catch((error) => setNotice(error.message)) }, [user, refresh])
+  useEffect(() => { if (user) api<{ groups: Group[] }>('/groups').then((data) => { setGroups(data.groups); setGroupsReady(true) }).catch((error) => { setGroupsReady(false); setNotice(error.message) }) }, [user, refresh])
   const inviteToken = route.startsWith('invite/') ? route.split('/')[1] : undefined
   async function signOut() {
     await post('/logout', {})
-    setUser(null); setGroups([]); go('home')
+    setUser(null); setGroups([]); setGroupsReady(false); go('home')
   }
   if (user === undefined) return <div className="loading-screen"><div className="brand"><span className="brand-mark">c</span>condivisa<span className="brand-dot">.</span></div><div className="loading-bar" /></div>
   if (!user) return <Auth needsSetup={needsSetup} inviteToken={inviteToken} onAuthenticated={(next, groupId) => { setUser(next); setNeedsSetup(false); if (groupId) go(`group/${groupId}`); else if (!inviteToken) go('home') }} />
@@ -43,15 +46,23 @@ export default function App() {
   const activeGroup = groupMatch ? groups.find((group) => group.id === groupMatch[1]) : null
   const page = groupMatch ? 'group' : route === 'users' ? 'users' : route === 'profile' ? 'profile' : 'home'
   const canCreateGroup = user.isAdmin || user.canCreateGroups
+  const addableGroups = groups.filter((group) => group.canAddExpense)
   const canAddInGroup = Boolean(activeGroup?.canAddExpense)
-  const showPrimaryAction = canAddInGroup || canCreateGroup
+  const canAddExpense = addableGroups.length > 0
+  const showPrimaryAction = groupsReady && (canAddExpense || canCreateGroup)
+  function primaryAction() {
+    if (activeGroup && canAddInGroup) go(`group/${activeGroup.id}/add`)
+    else if (!activeGroup && addableGroups.length === 1) go(`group/${addableGroups[0].id}/add`)
+    else if (canAddExpense) setGroupPickerOpen(true)
+    else setCreateOpen(true)
+  }
   return <div className="app-shell">
     <aside className={`sidebar ${menuOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-top"><button className="brand" onClick={() => go('home')}><span className="brand-mark">c</span><span>condivisa<span className="brand-dot">.</span></span></button><button className="icon-button close-sidebar" onClick={() => setMenuOpen(false)} aria-label="Chiudi menu"><X size={20} /></button></div>
       <div className="sidebar-section-label">IL TUO SPAZIO</div>
       <nav className="side-nav" aria-label="Navigazione principale"><button className={page === 'home' ? 'active' : ''} onClick={() => go('home')}><Home size={19} /> Panoramica</button>{user.isAdmin && <button className={page === 'users' ? 'active' : ''} onClick={() => go('users')}><Shield size={19} /> Utenti e accessi</button>}</nav>
       <div className="sidebar-groups-head"><span>I TUOI GRUPPI</span>{(user.isAdmin || user.canCreateGroups) && <button aria-label="Crea gruppo" onClick={() => setCreateOpen(true)}><Plus size={18} /></button>}</div>
-      <nav className="group-nav" aria-label="Gruppi">{groups.map((group) => <button key={group.id} className={activeGroup?.id === group.id ? 'active' : ''} onClick={() => go(`group/${group.id}`)}><span className="group-dot">{group.name.slice(0, 1).toUpperCase()}</span><span>{group.name}</span><ChevronRight size={15} /></button>)}</nav>
+      <nav className="group-nav" aria-label="Gruppi">{groups.map((group) => <button key={group.id} className={activeGroup?.id === group.id ? 'active' : ''} onClick={() => go(`group/${group.id}`)}><span className={`group-dot tone-${toneFor(group.name)}`}>{group.name.slice(0, 1).toUpperCase()}</span><span>{group.name}</span><ChevronRight size={15} /></button>)}</nav>
       <div className="sidebar-spacer" />
       <InstallGuide />
       <button className="profile" onClick={() => go('profile')}><Avatar name={user.name} /><span><strong>{user.name}</strong><small>{user.isAdmin ? 'Amministratore' : 'Membro'}</small></span><Settings2 size={18} /></button>
@@ -68,9 +79,10 @@ export default function App() {
     </main>
     <nav className={`mobile-bottom ${showPrimaryAction ? 'has-primary' : ''}`} aria-label="Navigazione mobile">
       <button className={page === 'home' ? 'active' : ''} onClick={() => go('home')}><Home size={22} /><span>Home</span></button>
-      {showPrimaryAction && <button className="mobile-add" aria-label={canAddInGroup ? 'Aggiungi spesa' : 'Crea gruppo'} onClick={() => { if (canAddInGroup && activeGroup) go(`group/${activeGroup.id}/add`); else setCreateOpen(true) }}><span className="mobile-add-disc"><Plus size={27} strokeWidth={2.4} /></span><span>{canAddInGroup ? 'Nuova spesa' : 'Nuovo gruppo'}</span></button>}
+      {showPrimaryAction && <button className="mobile-add" aria-label={canAddExpense ? 'Aggiungi spesa' : 'Crea gruppo'} onClick={primaryAction}><span className="mobile-add-disc"><Plus size={27} strokeWidth={2.4} /></span><span>{canAddExpense ? 'Nuova spesa' : 'Nuovo gruppo'}</span></button>}
       <button className={page === 'users' || page === 'profile' ? 'active' : ''} onClick={() => go(user.isAdmin ? 'users' : 'profile')}><Settings2 size={22} /><span>{user.isAdmin ? 'Accessi' : 'Account'}</span></button>
     </nav>
+    {groupPickerOpen && <Modal title="Scegli un gruppo" subtitle="Dove vuoi registrare la nuova spesa?" onClose={() => setGroupPickerOpen(false)}><div className="group-picker-list">{addableGroups.map((group) => <button key={group.id} onClick={() => { setGroupPickerOpen(false); go(`group/${group.id}/add`) }}><span className={`group-dot tone-${toneFor(group.name)}`}>{group.name.slice(0, 1).toUpperCase()}</span><span><strong>{group.name}</strong><small>{group.currency} · {group.participantCount || 0} partecipanti</small></span><ChevronRight size={18} /></button>)}</div></Modal>}
     {createOpen && <CreateGroup onClose={() => setCreateOpen(false)} onCreated={(id) => { setCreateOpen(false); setRefresh((n) => n + 1); go(`group/${id}`) }} />}
     {notice && <Notice message={notice} onClose={() => setNotice('')} />}
   </div>
@@ -81,7 +93,7 @@ function Dashboard({ user, groups, onCreate, onOpen }: { user: User; groups: Gro
   return <><div className="welcome-banner"><div><span className="eyebrow">IL TUO SPAZIO CONDIVISO</span><h1>Ciao, {user.name.split(' ')[0]} <span className="wave">✳</span></h1><p>Le spese insieme, finalmente in ordine. Tutto quello che ti serve è qui.</p>{canCreate && <Button onClick={onCreate}><Plus size={18} /> Nuovo gruppo</Button>}</div><div className="welcome-art"><div className="art-circle art-a" /><div className="art-circle art-b" /><div className="art-card art-card-one"><ArrowUpRight size={18} /><span>Spese condivise</span><strong>semplici.</strong></div><div className="art-card art-card-two"><div className="avatar-stack"><Avatar name="Anna" size="sm" /><Avatar name="Marco" size="sm" /><Avatar name="Luca" size="sm" /></div><span>insieme è meglio</span></div></div></div>
     <div className="dashboard-stats"><div className="stat-card"><span className="stat-icon mint"><UsersRound size={22} /></span><div><small>GRUPPI ATTIVI</small><strong>{groups.length}</strong><span>Le tue persone, in un posto</span></div></div><div className="stat-card"><span className="stat-icon peach"><Wallet size={22} /></span><div><small>SPESE REGISTRATE</small><strong>{groups.reduce((sum, group) => sum + (group.expenseCount || 0), 0)}</strong><span>Tutti i conti sotto controllo</span></div></div><div className="stat-card"><span className="stat-icon lavender"><Shield size={22} /></span><div><small>IL TUO ACCESSO</small><strong className="stat-word">{user.isAdmin ? 'Admin' : canCreate ? 'Creatore' : 'Membro'}</strong><span>Permessi su misura per te</span></div></div></div>
     <SectionTitle eyebrow="I TUOI GRUPPI" title="Insieme si conta meglio" detail="Apri un gruppo per vedere spese, saldi e attività." action={canCreate && <Button variant="secondary" onClick={onCreate}><Plus size={17} /> Crea gruppo</Button>} />
-    {groups.length === 0 ? <Empty icon={<UsersRound size={30} />} title={canCreate ? 'Il tuo primo gruppo ti aspetta' : 'Nessun gruppo ancora'} detail={canCreate ? 'Crea un gruppo e invita le persone con cui condividi le spese.' : 'Chiedi a un amministratore un invito per entrare in un gruppo.'} action={canCreate && <Button onClick={onCreate}>Crea il primo gruppo <ChevronRight size={17} /></Button>} /> : <div className="group-grid">{groups.map((group, index) => <button className="group-card" key={group.id} onClick={() => onOpen(group.id)}><span className={`group-card-icon tone-${index % 5}`}>{group.name.slice(0, 1).toUpperCase()}</span><span className="group-card-body"><strong>{group.name}</strong><small>{group.participantCount} partecipanti · {group.expenseCount} spese</small></span><span className="group-card-bottom"><span>{group.currency}</span><span>Apri gruppo <ChevronRight size={16} /></span></span></button>)}</div>}
+    {groups.length === 0 ? <Empty icon={<UsersRound size={30} />} title={canCreate ? 'Il tuo primo gruppo ti aspetta' : 'Nessun gruppo ancora'} detail={canCreate ? 'Crea un gruppo e invita le persone con cui condividi le spese.' : 'Chiedi a un amministratore un invito per entrare in un gruppo.'} action={canCreate && <Button onClick={onCreate}>Crea il primo gruppo <ChevronRight size={17} /></Button>} /> : <div className="group-grid">{groups.map((group) => <button className="group-card" key={group.id} onClick={() => onOpen(group.id)}><span className={`group-card-icon tone-${toneFor(group.name)}`}>{group.name.slice(0, 1).toUpperCase()}</span><span className="group-card-body"><strong>{group.name}</strong><small>{group.participantCount} partecipanti · {group.expenseCount} spese</small></span><span className="group-card-bottom"><span>{group.currency}</span><span>Apri gruppo <ChevronRight size={16} /></span></span></button>)}</div>}
     <div className="help-strip"><CircleHelp size={24} /><div><strong>Come funziona?</strong><p>Aggiungi le spese, scegli come dividerle e guarda chi deve cosa. I permessi proteggono ogni gruppo.</p></div><ArrowDownRight size={20} /></div>
   </>
 }

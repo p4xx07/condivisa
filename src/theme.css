@@ -15,32 +15,11 @@
   background: var(--surface-field);
   color: var(--ink);
 }
-.theme-picker-compact {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-}
-.theme-picker-compact select {
-  min-width: 120px;
-  font-size: 0.72rem;
-}
+.theme-toggle { flex: none; }
 .auth-card > .theme-picker {
   margin: 0 0 20px;
   justify-self: end;
 }
-@media (max-width: 600px) {
-  .theme-picker-compact > span {
-    display: none;
-  }
-  .theme-picker-compact select {
-    min-width: 92px;
-    max-width: 106px;
-    font-size: 0.68rem;
-    padding: 5px;
-  }
-}
-
 :root[data-theme="amoled"] {
   color-scheme: dark;
   --ink: #eff8f2;

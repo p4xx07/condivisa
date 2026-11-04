@@ -33,3 +33,19 @@ test('balances settle every participant and monthly recurrence preserves the anc
   assert.equal(nextRecurringDate('2026-01-31', 'MONTHLY', 31), '2026-02-28')
   assert.equal(nextRecurringDate('2026-02-28', 'MONTHLY', 31), '2026-03-31')
 })
+
+test('simplification replaces a chain of two direct reimbursements with one without changing balances', () => {
+  const participants = ['a', 'b', 'c'].map((id) => ({ id, name: id }))
+  const expenses = [
+    { payer_id: 'b', amount_minor: 1000, shares: [{ participant_id: 'a', amount_minor: 1000 }] },
+    { payer_id: 'c', amount_minor: 1000, shares: [{ participant_id: 'b', amount_minor: 1000 }] },
+  ]
+  const direct = calculateBalances(participants, expenses, false)
+  const simple = calculateBalances(participants, expenses, true)
+  assert.deepEqual(direct.settlements, [
+    { from: 'a', to: 'b', amountMinor: 1000 },
+    { from: 'b', to: 'c', amountMinor: 1000 },
+  ])
+  assert.deepEqual(simple.settlements, [{ from: 'a', to: 'c', amountMinor: 1000 }])
+  assert.deepEqual(simple.balances, direct.balances)
+})

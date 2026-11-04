@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS activity (
 `,
   `ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE sessions ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0;`,
+  `ALTER TABLE groups ADD COLUMN simplify_settlements INTEGER NOT NULL DEFAULT 1;`,
 ]
 const currentVersion = db.prepare('PRAGMA user_version').get().user_version
 if (currentVersion > migrations.length)

@@ -1,5 +1,19 @@
 import type { ReactNode } from 'react'
 import { ArrowRight, X } from 'lucide-react'
+import { Avatar as DiceBearAvatar, Style } from '@dicebear/core'
+import avataaars from '@dicebear/styles/avataaars.json'
+import { toneFor } from './colors'
+
+const avatarStyle = new Style(avataaars)
+const avatarCache = new Map<string, string>()
+function avatarUrl(name: string) {
+  let url = avatarCache.get(name)
+  if (!url) {
+    url = new DiceBearAvatar(avatarStyle, { seed: name }).toDataUri()
+    avatarCache.set(name, url)
+  }
+  return url
+}
 
 export function Button({ children, onClick, variant = 'primary', disabled = false, type = 'button', className = '' }: {
   children: ReactNode; onClick?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; disabled?: boolean; type?: 'button' | 'submit'; className?: string
@@ -16,8 +30,7 @@ export function Modal({ title, subtitle, onClose, children, wide = false }: { ti
 }
 export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
   const palette = ['mint', 'lavender', 'peach', 'sky', 'rose']
-  const bucket = [...name].reduce((sum, letter) => sum + letter.charCodeAt(0), 0) % palette.length
-  return <span className={`avatar avatar-${size} avatar-${palette[bucket]}`} title={name}>{name.trim().slice(0, 2).toUpperCase()}</span>
+  return <span className={`avatar avatar-${size} avatar-${palette[toneFor(name)]}`} title={name}><img src={avatarUrl(name)} alt="" loading="lazy" /></span>
 }
 export function Empty({ icon, title, detail, action }: { icon: ReactNode; title: string; detail: string; action?: ReactNode }) {
   return <div className="empty"><div className="empty-icon">{icon}</div><h3>{title}</h3><p>{detail}</p>{action}</div>

@@ -44,15 +44,26 @@ export function allocate(amountMinor, mode, shares) {
   return shares.map((row, index) => ({ participantId: row.participantId, amountMinor: floor[index], weight: weights[index] }))
 }
 
-export function calculateBalances(participants, expenses) {
+export function calculateBalances(participants, expenses, simplify = true) {
   const balances = new Map(participants.map((p) => [p.id, 0]))
+  const direct = new Map()
   for (const expense of expenses) {
     balances.set(expense.payer_id, (balances.get(expense.payer_id) ?? 0) + expense.amount_minor)
     for (const share of expense.shares) {
       balances.set(share.participant_id, (balances.get(share.participant_id) ?? 0) - share.amount_minor)
+      if (share.participant_id !== expense.payer_id && share.amount_minor > 0) {
+        const key = `${share.participant_id}:${expense.payer_id}`
+        direct.set(key, (direct.get(key) ?? 0) + share.amount_minor)
+      }
     }
   }
   const list = participants.map((p) => ({ ...p, balanceMinor: balances.get(p.id) ?? 0 }))
+  const directSettlements = []
+  const ids = participants.map((p) => p.id)
+  for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+    const difference = (direct.get(`${ids[i]}:${ids[j]}`) ?? 0) - (direct.get(`${ids[j]}:${ids[i]}`) ?? 0)
+    if (difference) directSettlements.push({ from: difference > 0 ? ids[i] : ids[j], to: difference > 0 ? ids[j] : ids[i], amountMinor: Math.abs(difference) })
+  }
   const debtors = list.filter((p) => p.balanceMinor < 0).map((p) => ({ ...p, remaining: -p.balanceMinor })).sort((a, b) => b.remaining - a.remaining)
   const creditors = list.filter((p) => p.balanceMinor > 0).map((p) => ({ ...p, remaining: p.balanceMinor })).sort((a, b) => b.remaining - a.remaining)
   const settlements = []
@@ -65,7 +76,7 @@ export function calculateBalances(participants, expenses) {
     if (!debtors[d].remaining) d++
     if (!creditors[c].remaining) c++
   }
-  return { balances: list, settlements }
+  return { balances: list, settlements: simplify && settlements.length <= directSettlements.length ? settlements : directSettlements }
 }
 
 export function nextRecurringDate(date, interval, anchorDay) {

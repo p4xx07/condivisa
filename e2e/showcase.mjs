@@ -11,6 +11,10 @@ mkdirSync(output, { recursive: true })
 const macChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const browser = await chromium.launch({ headless: true, ...(existsSync(macChrome) ? { executablePath: macChrome } : {}) })
 
+async function setTheme(page, theme) {
+  if (await page.locator('html').getAttribute('data-theme') !== theme)
+    await page.getByRole('button', { name: theme === 'amoled' ? 'Attiva tema AMOLED' : 'Attiva tema chiaro' }).click()
+}
 try {
   const desktop = await browser.newContext({ baseURL, viewport: { width: 1365, height: 930 }, deviceScaleFactor: 1 })
   const page = await desktop.newPage()
@@ -60,7 +64,7 @@ try {
   await page.reload()
   await page.getByText('Insieme si conta meglio').waitFor()
   await page.locator('.group-card').getByText('Weekend a Lisbona').waitFor()
-  await page.getByRole('combobox', { name: 'Tema' }).selectOption('light')
+  await setTheme(page, 'light')
   await page.screenshot({ path: `${output}/panoramica-desktop.png` })
 
   await page.goto(`${baseURL}/#/group/${groupId}`)
@@ -68,6 +72,10 @@ try {
   await page.getByText('Cena da Ramiro').waitFor()
   await page.locator('.topbar-trail strong').getByText('Weekend a Lisbona').waitFor()
   await page.screenshot({ path: `${output}/spese-desktop.png` })
+
+  await page.getByRole('tab', { name: 'Saldi' }).click()
+  await page.getByText('Rimborsi compensati tra tutti i partecipanti.').waitFor()
+  await page.screenshot({ path: `${output}/saldi-desktop.png` })
 
   await page.getByRole('tab', { name: 'Permessi' }).click()
   await page.getByText('Permessi del gruppo').waitFor()
@@ -84,15 +92,34 @@ try {
   await phone.getByRole('button', { name: /Accedi/ }).click()
   await phone.getByText('Insieme si conta meglio').waitFor()
   await phone.locator('.group-card').getByText('Weekend a Lisbona').waitFor()
-  await phone.getByRole('combobox', { name: 'Tema' }).selectOption('amoled')
+  await setTheme(phone, 'amoled')
   await phone.waitForTimeout(250)
   await phone.screenshot({ path: `${output}/panoramica-amoled-mobile.png` })
+  await phone.getByRole('button', { name: 'Aggiungi spesa' }).click()
+  await phone.getByRole('dialog', { name: 'Nuova spesa' }).waitFor()
+  await phone.getByRole('dialog', { name: 'Nuova spesa' }).getByRole('button', { name: 'Chiudi' }).first().click()
+  await api('POST', '/groups', {
+    name: 'Casa al mare', currency: 'EUR',
+    participants: [{ name: 'Giulia' }, { name: 'Marco' }],
+  })
+  await phone.goto(`${baseURL}/#/home`)
+  await phone.reload()
+  await phone.getByRole('button', { name: 'Aggiungi spesa' }).click()
+  const picker = phone.getByRole('dialog', { name: 'Scegli un gruppo' })
+  await picker.waitFor()
+  await picker.screenshot({ path: `${output}/scelta-gruppo-amoled-mobile.png` })
+  await picker.getByRole('button', { name: 'Chiudi' }).click()
 
   await phone.goto(`${baseURL}/#/group/${groupId}`)
   await phone.getByText('Le spese del gruppo').waitFor()
   await phone.getByText('Cena da Ramiro').waitFor()
   await phone.locator('.topbar-trail strong').getByText('Weekend a Lisbona').waitFor()
   await phone.screenshot({ path: `${output}/spese-amoled-mobile.png` })
+  await phone.getByRole('tab', { name: 'Saldi' }).click()
+  await phone.getByText('Rimborsi compensati tra tutti i partecipanti.').waitFor()
+  await phone.locator('.settlement-option').evaluate((element) => element.scrollIntoView({ block: 'center' }))
+  await phone.waitForTimeout(150)
+  await phone.screenshot({ path: `${output}/saldi-amoled-mobile.png` })
   await phone.locator('.mobile-add').click()
   await phone.getByRole('dialog', { name: 'Nuova spesa' }).screenshot({ path: `${output}/nuova-spesa-amoled-mobile.png` })
 
