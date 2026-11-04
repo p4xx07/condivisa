@@ -6,7 +6,7 @@ Ispirazione funzionale: [Spliit](https://github.com/spliit-app/spliit) di Sebast
 
 ## Anteprima
 
-Schermate reali della versione `v0.1.1`, acquisite con un gruppo e persone di esempio. Nessun dato personale è incluso.
+Schermate reali della versione `v0.1.2`, acquisite con un gruppo e persone di esempio. Nessun dato personale è incluso.
 
 ### Panoramica e spese
 
@@ -56,7 +56,7 @@ Aprire `http://127.0.0.1:5173`. Alla prima apertura, creare l'amministratore usa
 ## NAS / Portainer
 
 1. Configura un hostname pubblico HTTPS nel reverse proxy del NAS, con certificato valido. Inoltra le richieste HTTP al NAS sulla porta scelta, per esempio `3000`, conservando `Host` e `X-Forwarded-Proto`.
-2. Crea uno stack Portainer dal file `compose.portainer.yaml`. Imposta `IMAGE=ghcr.io/p4xx07/condivisa:v0.1.1`, `PUBLIC_ORIGIN=https://spese.example.com`, `HOST_PORT=3000` e `SETUP_KEY` casuale di almeno 24 caratteri. Usa un tag di versione, non `latest`. L'immagine è pubblica e si scarica senza login GHCR.
+2. Crea uno stack Portainer dal file `compose.portainer.yaml`. Imposta `IMAGE=ghcr.io/p4xx07/condivisa:v0.1.2`, `PUBLIC_ORIGIN=https://spese.example.com`, `HOST_PORT=3000` e `SETUP_KEY` casuale di almeno 24 caratteri. Usa un tag di versione, non `latest`. L'immagine è pubblica e si scarica senza login GHCR.
 3. Per costruire localmente usa `compose.yaml` con le stesse variabili e `docker compose up -d --build`.
 4. Apri l'hostname HTTPS, configura l'amministratore e crea il primo gruppo. Il volume `condivisa_data` conserva database e allegati tra ricreazioni dello stack.
 5. Su iPhone apri l'URL in **Safari**, tocca **Condividi → Aggiungi alla schermata Home**. Su Android usa il comando **Installa app** del browser. Il browser deve raggiungere il server via HTTPS; la PWA non sincronizza spese offline.

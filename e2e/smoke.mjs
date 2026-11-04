@@ -9,6 +9,26 @@ const screenshots = resolve('artifacts')
 mkdirSync(screenshots, { recursive: true })
 const macChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const browser = await chromium.launch({ headless: true, ...(existsSync(macChrome) ? { executablePath: macChrome } : {}) })
+async function checkBottomBar(page, name) {
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await page.waitForTimeout(100)
+  const layout = await page.evaluate(() => {
+    const nav = document.querySelector('.mobile-bottom')
+    const content = document.querySelector('.content-area')
+    const navRect = nav.getBoundingClientRect()
+    return {
+      navBottom: navRect.bottom,
+      navTop: navRect.top,
+      viewportHeight: window.innerHeight,
+      lastContentBottom: content.lastElementChild.getBoundingClientRect().bottom,
+      background: getComputedStyle(nav).backgroundColor,
+    }
+  })
+  if (Math.abs(layout.navBottom - layout.viewportHeight) > 1 || layout.lastContentBottom > layout.navTop - 8 || layout.background === 'rgba(0, 0, 0, 0)' || layout.background === 'transparent')
+    throw new Error(`La barra mobile copre il contenuto o non tocca il fondo in ${name}: ${JSON.stringify(layout)}`)
+  await page.screenshot({ path: `${screenshots}/${name}-scroll-end.png` })
+  await page.evaluate(() => window.scrollTo(0, 0))
+}
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 })
   await page.goto(baseURL)
@@ -77,10 +97,10 @@ try {
     body: JSON.stringify({ name: 'Privato', currency: 'EUR', participants: [{ name: 'Io' }] }),
   })).status)
   if (guestCreateStatus !== 403) throw new Error(`L'invitato ha creato un gruppo: ${guestCreateStatus}`)
-  await guest.screenshot({ path: `${screenshots}/guest-mobile.png`, fullPage: true })
+  await guest.screenshot({ path: `${screenshots}/guest-mobile.png` })
   await guest.getByRole('button', { name: 'Apri il tuo account' }).click()
   await guest.getByRole('heading', { name: 'Impostazioni personali' }).waitFor()
-  await guest.screenshot({ path: `${screenshots}/profile-mobile.png`, fullPage: true })
+  await guest.screenshot({ path: `${screenshots}/profile-mobile.png` })
   await guest.getByLabel('Password attuale').fill('very-long-guest-password')
   await guest.getByLabel('Nuova password', { exact: true }).fill('another-long-guest-password')
   await guest.getByLabel('Conferma nuova password').fill('another-long-guest-password')
@@ -105,7 +125,8 @@ try {
   await guest.reload()
   await guest.getByText('Le spese del gruppo').waitFor()
   if (await guest.locator('.mobile-add').count()) throw new Error('La navigazione mostra Aggiungi a un membro in sola lettura')
-  const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 })
+  if (await guest.locator('.mobile-bottom > button').count() !== 2) throw new Error('La navigazione di sola lettura non ha un tasto per lato')
+  const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true })
   await mobile.goto(baseURL)
   await mobile.waitForLoadState('networkidle')
   if (await mobile.getByText('Accedi al tuo spazio').isVisible().catch(() => false)) {
@@ -114,29 +135,37 @@ try {
     await mobile.getByRole('button', { name: /Accedi/ }).click()
   }
   await mobile.getByText('Insieme si conta meglio').waitFor({ timeout: 10000 })
+  if (await mobile.locator('.mobile-bottom > button').count() !== 3) throw new Error('La navigazione mobile non ha un tasto per lato')
   const navBox = await mobile.locator('.mobile-bottom').boundingBox()
   const actionBox = await mobile.locator('.mobile-add').boundingBox()
   const discBox = await mobile.locator('.mobile-add-disc').boundingBox()
   if (!navBox || !actionBox || !discBox || Math.abs(actionBox.x + actionBox.width / 2 - (navBox.x + navBox.width / 2)) > 1 || discBox.y >= navBox.y || discBox.y + discBox.height <= navBox.y)
     throw new Error('Il pulsante principale non è centrato e rialzato sulla barra mobile')
+  const leftBox = await mobile.locator('.mobile-bottom button:first-child').boundingBox()
+  const rightBox = await mobile.locator('.mobile-bottom button:last-child').boundingBox()
+  if (!leftBox || !rightBox || Math.abs((leftBox.x + leftBox.width / 2 + rightBox.x + rightBox.width / 2) / 2 - (actionBox.x + actionBox.width / 2)) > 1)
+    throw new Error('La navigazione mobile non è simmetrica attorno al pulsante principale')
   await mobile.setViewportSize({ width: 320, height: 700 })
   const narrowDisc = await mobile.locator('.mobile-add-disc').boundingBox()
-  const narrowLeftIcon = await mobile.locator('.mobile-bottom button:nth-child(2) svg').boundingBox()
+  const narrowLeftIcon = await mobile.locator('.mobile-bottom button:first-child svg').boundingBox()
   const narrowRightIcon = await mobile.locator('.mobile-bottom button:last-child svg').boundingBox()
   if (!narrowDisc || !narrowLeftIcon || !narrowRightIcon || narrowLeftIcon.x + narrowLeftIcon.width >= narrowDisc.x || narrowDisc.x + narrowDisc.width >= narrowRightIcon.x)
     throw new Error('Il pulsante principale si sovrappone alle altre icone a 320px')
+  await checkBottomBar(mobile, 'dashboard-narrow-mobile')
   await mobile.setViewportSize({ width: 390, height: 844 })
-  await mobile.screenshot({ path: `${screenshots}/dashboard-mobile.png`, fullPage: true })
+  await mobile.screenshot({ path: `${screenshots}/dashboard-mobile.png` })
   await mobile.getByRole('combobox', { name: 'Tema' }).first().selectOption('amoled')
   await mobile.waitForTimeout(150)
-  await mobile.screenshot({ path: `${screenshots}/dashboard-amoled-mobile.png`, fullPage: true })
+  await mobile.screenshot({ path: `${screenshots}/dashboard-amoled-mobile.png` })
+  await checkBottomBar(mobile, 'dashboard-amoled-mobile')
   await mobile.getByRole('combobox', { name: 'Tema' }).first().selectOption('light')
   await mobile.locator('.group-card').first().click()
   await mobile.getByText('Le spese del gruppo').waitFor({ timeout: 10000 })
-  await mobile.screenshot({ path: `${screenshots}/group-mobile.png`, fullPage: true })
+  await mobile.screenshot({ path: `${screenshots}/group-mobile.png` })
   await mobile.getByRole('combobox', { name: 'Tema' }).first().selectOption('amoled')
   await mobile.waitForTimeout(150)
-  await mobile.screenshot({ path: `${screenshots}/group-amoled-mobile.png`, fullPage: true })
+  await mobile.screenshot({ path: `${screenshots}/group-amoled-mobile.png` })
+  await checkBottomBar(mobile, 'group-amoled-mobile')
   await mobile.getByRole('combobox', { name: 'Tema' }).first().selectOption('light')
   await mobile.locator('.mobile-add').click()
   await mobile.getByRole('dialog', { name: 'Nuova spesa' }).screenshot({ path: `${screenshots}/expense-mobile.png` })

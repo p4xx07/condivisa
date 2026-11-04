@@ -68,7 +68,6 @@ export default function App() {
     </main>
     <nav className={`mobile-bottom ${showPrimaryAction ? 'has-primary' : ''}`} aria-label="Navigazione mobile">
       <button className={page === 'home' ? 'active' : ''} onClick={() => go('home')}><Home size={22} /><span>Home</span></button>
-      <button className={page === 'group' ? 'active' : ''} onClick={() => go(activeGroup ? `group/${activeGroup.id}` : 'home')}><UsersRound size={22} /><span>Gruppi</span></button>
       {showPrimaryAction && <button className="mobile-add" aria-label={canAddInGroup ? 'Aggiungi spesa' : 'Crea gruppo'} onClick={() => { if (canAddInGroup && activeGroup) go(`group/${activeGroup.id}/add`); else setCreateOpen(true) }}><span className="mobile-add-disc"><Plus size={27} strokeWidth={2.4} /></span><span>{canAddInGroup ? 'Nuova spesa' : 'Nuovo gruppo'}</span></button>}
       <button className={page === 'users' || page === 'profile' ? 'active' : ''} onClick={() => go(user.isAdmin ? 'users' : 'profile')}><Settings2 size={22} /><span>{user.isAdmin ? 'Accessi' : 'Account'}</span></button>
     </nav>
