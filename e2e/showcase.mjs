@@ -123,6 +123,8 @@ try {
   await phone.screenshot({ path: `${output}/saldi-amoled-mobile.png` })
   await phone.locator('.mobile-add').click()
   await phone.getByRole('dialog', { name: 'Nuova spesa' }).screenshot({ path: `${output}/nuova-spesa-amoled-mobile.png` })
+  await phone.getByRole('dialog', { name: 'Nuova spesa' }).getByRole('button', { name: 'Altre opzioni' }).click()
+  await phone.getByRole('dialog', { name: 'Nuova spesa' }).screenshot({ path: `${output}/opzioni-spesa-amoled-mobile.png` })
   await phone.getByRole('dialog', { name: 'Nuova spesa' }).getByRole('button', { name: 'Chiudi' }).first().click()
   await phone.getByRole('button', { name: 'Altre azioni' }).click()
   await phone.getByRole('button', { name: 'Categorie', exact: true }).click()
