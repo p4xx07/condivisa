@@ -32,7 +32,7 @@ test('permissions are enforced on direct API requests and revoked immediately', 
   assert.equal((await request('GET', '/api/groups', undefined, admin)).body.groups.find((item) => item.id === groupId).canAddExpense, true)
   const group = await request('GET', `/api/groups/${groupId}`, undefined, admin)
   const [anna, bruno] = group.body.participants
-  const expense = { title: 'Cena', amountMinor: 3000, date: '2026-11-03', category: 'Cibo', payerId: anna.id, splitMode: 'EQUAL', shares: [{ participantId: anna.id, value: 1 }, { participantId: bruno.id, value: 1 }] }
+  const expense = { title: 'Cena', amountMinor: 3000, date: '2026-11-03', category: 'Cibo e bevande', payerId: anna.id, splitMode: 'EQUAL', shares: [{ participantId: anna.id, value: 1 }, { participantId: bruno.id, value: 1 }] }
   const adminExpense = await request('POST', `/api/groups/${groupId}/expenses`, expense, admin)
   assert.equal(adminExpense.status, 200)
 
@@ -51,6 +51,21 @@ test('permissions are enforced on direct API requests and revoked immediately', 
   assert.equal((await request('PATCH', `/api/groups/${groupId}/participants/${bruno.id}`, { userId: registered.body.user.id }, admin)).status, 200)
   assert.equal((await request('GET', `/api/groups/${groupId}`, undefined, guest)).body.participants.find((row) => row.id === bruno.id).userId, registered.body.user.id)
   assert.equal((await request('GET', `/api/groups/${groupId}`, undefined, guest)).status, 200)
+  const initialCategories = await request('GET', `/api/groups/${groupId}/categories`, undefined, guest)
+  assert.equal(initialCategories.status, 200)
+  assert.ok(initialCategories.body.predefined.includes('Viaggi'))
+  assert.equal((await request('POST', `/api/groups/${groupId}/expenses`, { ...expense, category: 'Animali' }, guest)).status, 400)
+  assert.equal((await request('POST', `/api/groups/${groupId}/categories`, { name: 'Animali' }, guest)).status, 200)
+  assert.equal((await request('POST', `/api/groups/${groupId}/categories`, { name: 'Animale' }, guest)).status, 409)
+  assert.equal((await request('POST', `/api/groups/${groupId}/categories`, { name: 'Viaggio' }, guest)).status, 409)
+  assert.equal((await request('POST', `/api/groups/${privateGroup.body.id}/categories`, { name: 'Segreto' }, guest)).status, 403)
+  const customExpense = await request('POST', `/api/groups/${groupId}/expenses`, { ...expense, title: 'Gatto', category: 'Animali', recurrence: 'MONTHLY' }, guest)
+  assert.equal(customExpense.status, 200)
+  assert.equal((await request('POST', `/api/groups/${groupId}/categories/merge`, { from: 'Animali', to: 'Casa' }, guest)).status, 403)
+  assert.equal((await request('POST', `/api/groups/${groupId}/categories/merge`, { from: 'Animali', to: 'Casa' }, admin)).status, 200)
+  assert.equal((await request('GET', `/api/groups/${groupId}/expenses`, undefined, guest)).body.expenses.find((row) => row.id === customExpense.body.id).category, 'Casa')
+  assert.equal(JSON.parse((await request('GET', `/api/groups/${groupId}/recurring`, undefined, admin)).body.rules[0].template).category, 'Casa')
+  assert.equal((await request('GET', `/api/groups/${groupId}/categories`, undefined, guest)).body.custom.includes('Animali'), false)
   assert.equal((await request('PATCH', `/api/groups/${groupId}`, { simplifySettlements: false }, guest)).status, 403)
   assert.equal((await request('PATCH', `/api/groups/${groupId}/expenses/${adminExpense.body.id}`, expense, guest)).status, 403)
   assert.equal((await request('GET', `/api/groups/${groupId}/export/json`, undefined, guest)).status, 403)
@@ -94,6 +109,7 @@ test('permissions are enforced on direct API requests and revoked immediately', 
   assert.equal((await request('PUT', `/api/groups/${groupId}/members/${registered.body.user.id}`, viewer, admin)).status, 200)
   assert.equal((await request('GET', '/api/groups', undefined, guest)).body.groups.find((item) => item.id === groupId).canAddExpense, false)
   assert.equal((await request('POST', `/api/groups/${groupId}/expenses`, expense, guest)).status, 403)
+  assert.equal((await request('POST', `/api/groups/${groupId}/categories`, { name: 'Nuova' }, guest)).status, 403)
   assert.equal((await request('GET', `/api/groups/${groupId}/expenses`, undefined, guest)).status, 200)
   assert.equal((await request('POST', `/api/groups/${privateGroup.body.id}/delete`, {}, admin)).status, 200)
   assert.equal((await request('GET', `/api/groups/${privateGroup.body.id}`, undefined, admin)).status, 403)

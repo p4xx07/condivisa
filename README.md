@@ -6,7 +6,7 @@ The product takes functional inspiration from [Spliit](https://github.com/spliit
 
 ## Screenshots
 
-These are real screenshots of `v0.2.0`, captured with sample groups and people. They contain no personal data.
+These are real screenshots of `v0.3.0`, captured with sample groups and people. They contain no personal data.
 
 ### Overview and expenses
 
@@ -34,6 +34,8 @@ When you can add expenses to multiple groups, the central action asks which grou
 
 ![Mobile group balances in AMOLED mode](docs/screenshots/saldi-amoled-mobile.png)
 
+![Group categories and custom-category management in AMOLED mode](docs/screenshots/categorie-amoled-mobile.png)
+
 You can reproduce these screenshots with [`e2e/showcase.mjs`](e2e/showcase.mjs) against a temporary instance with an empty database.
 
 ## Features
@@ -44,7 +46,7 @@ You can reproduce these screenshots with [`e2e/showcase.mjs`](e2e/showcase.mjs) 
 - Per-person, per-group permissions for viewing, adding expenses, editing own or all expenses, managing groups and members, exporting, and deleting groups.
 - Expense participants can be linked to user accounts. Split costs equally, by shares, by percentage, or by exact amounts; view balances and suggested reimbursements.
 - A group-level **Simplify expenses** option in Balances. Enabled by default, it offsets balances across the whole group; disabled, it shows direct reimbursements between participants, offset pairwise. Group managers can change the setting.
-- Recurring expenses, categories, statistics, activity history, image/PDF attachments, CSV/JSON export, and currency conversion on request.
+- Recurring expenses, saved per-group categories with predefined choices and a separate custom-category action, statistics, activity history, image/PDF attachments, CSV/JSON export, and currency conversion on request. Group managers can merge duplicate legacy categories without losing expenses or recurring rules.
 - Soft-deleted groups can be restored by an administrator from the user administration page. There is no automatic permanent deletion.
 - Light and true-black AMOLED themes, plus a system setting. The top bar has a compact light/AMOLED toggle; the full choice is in account settings and is also available before login.
 - Avataaars generated locally from names, and group colors that remain stable when the group list changes order.
@@ -68,12 +70,12 @@ In production, the database and attachments live under `/data`. Back up **both**
 
 ## NAS / Portainer
 
-Paste this complete stack into **Portainer → Stacks**. Before deploying, replace `spese.example.com` with your HTTPS hostname and replace the example setup key with a random value of at least 24 characters. The image is pinned to `v0.2.0`.
+Paste this complete stack into **Portainer → Stacks**. Before deploying, replace `spese.example.com` with your HTTPS hostname and replace the example setup key with a random value of at least 24 characters. The image is pinned to `v0.3.0`.
 
 ```yaml
 services:
   app:
-    image: ghcr.io/p4xx07/condivisa:v0.2.0
+    image: ghcr.io/p4xx07/condivisa:v0.3.0
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"
@@ -111,7 +113,7 @@ For the Compose example above, create one reverse proxy rule in **DSM 7 → Cont
 Assign a valid certificate to the source hostname and set `PUBLIC_ORIGIN=https://spese.example.com` in the stack. Forward the entire hostname to the container: both `/` and `/api/*` must reach it. If you change `HOST_PORT` in `compose.portainer.yaml`, use that host port as the Synology destination port; the container's internal port remains `3000`. Only HTTPS port `443` needs to be reachable externally for this hostname. See [Synology's reverse proxy settings](https://kb.synology.com/en-global/DSM/help/DSM/AdminCenter/system_login_portal_advanced) for the DSM fields.
 
 1. Configure a public HTTPS hostname and a valid certificate in your NAS reverse proxy. Forward HTTP requests to the chosen NAS port (for example, `3000`) while preserving `Host` and `X-Forwarded-Proto`.
-2. If you prefer [`compose.portainer.yaml`](compose.portainer.yaml), set `PUBLIC_ORIGIN` and `SETUP_KEY` in Portainer, and optionally `HOST_PORT`. `IMAGE` defaults to `ghcr.io/p4xx07/condivisa:v0.2.0`. The image is public and can be pulled without GHCR credentials.
+2. If you prefer [`compose.portainer.yaml`](compose.portainer.yaml), set `PUBLIC_ORIGIN` and `SETUP_KEY` in Portainer, and optionally `HOST_PORT`. `IMAGE` defaults to `ghcr.io/p4xx07/condivisa:v0.3.0`. The image is public and can be pulled without GHCR credentials.
 3. To build locally, use `compose.yaml` with the same variables and run `docker compose up -d --build`.
 4. Open the HTTPS hostname, set up the administrator, and create your first group. The named volume preserves data across stack updates.
 5. On iPhone, open the URL in **Safari** and choose **Share → Add to Home Screen**. On Android, use the browser's **Install app** action. The browser must reach the server over HTTPS. The PWA does not sync expense changes offline.

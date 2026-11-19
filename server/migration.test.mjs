@@ -20,22 +20,27 @@ function startWith(path) {
   })
 }
 
-test('a populated v1 database migrates to v3 without losing sessions', () => {
+test('a populated v1 database migrates to v4 without losing sessions or legacy categories', () => {
   const path = databasePath()
   let db = new DatabaseSync(path)
   try {
     db.exec(`CREATE TABLE users(id TEXT PRIMARY KEY,password_hash TEXT NOT NULL);
       CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL,expires_at TEXT NOT NULL);
       CREATE TABLE groups(id TEXT PRIMARY KEY,name TEXT NOT NULL);
+      CREATE TABLE expenses(group_id TEXT NOT NULL,category TEXT NOT NULL,is_reimbursement INTEGER NOT NULL DEFAULT 0);
+      CREATE TABLE recurring_rules(group_id TEXT NOT NULL,template_json TEXT NOT NULL);
       INSERT INTO users(id,password_hash) VALUES('old-user','old-hash');
       INSERT INTO sessions(token_hash,user_id,expires_at) VALUES('old-token','old-user','2099-01-01');
       INSERT INTO groups(id,name) VALUES('old-group','Old group');
+      INSERT INTO expenses(group_id,category) VALUES('old-group','Cibo'),('old-group','Cibi');
+      INSERT INTO recurring_rules(group_id,template_json) VALUES('old-group','{"category":"Affitto"}');
       PRAGMA user_version=1;`)
     db.close(); db = null
     const result = startWith(path)
     assert.equal(result.status, 0, result.stderr)
     db = new DatabaseSync(path)
-    assert.equal(db.prepare('PRAGMA user_version').get().user_version, 3)
+    assert.equal(db.prepare('PRAGMA user_version').get().user_version, 4)
+    assert.deepEqual(db.prepare("SELECT name FROM group_categories WHERE group_id='old-group' ORDER BY name").all().map((row) => row.name), ['Affitto', 'Cibi', 'Cibo'])
     assert.equal(db.prepare("SELECT simplify_settlements FROM groups WHERE id='old-group'").get().simplify_settlements, 1)
     const user = db.prepare('SELECT id,password_hash,auth_version FROM users').get()
     assert.equal(user.id, 'old-user')

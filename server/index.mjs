@@ -11,6 +11,7 @@ import {
   requireGroup, requireSameOrigin, requireUser, setMembership, setupAdmin, visibleGroups,
 } from './auth.mjs'
 import { allocate, calculateBalances, currencyDigits, nextRecurringDate } from './money.mjs'
+import { categoryKey, predefinedCategories, similarCategory } from './categories.mjs'
 
 const app = Fastify({ logger: process.env.NODE_ENV !== 'test', bodyLimit: 6 * 1024 * 1024, trustProxy: true })
 const uploadDir = resolve(process.env.UPLOAD_DIR || './data/uploads')
@@ -32,6 +33,9 @@ const required = (value, label, max = 200) => {
   return result
 }
 const groupId = (request) => request.params.id
+const customCategories = (id) => all('SELECT name FROM group_categories WHERE group_id=? ORDER BY name COLLATE NOCASE', id).map((row) => row.name)
+const groupCategories = (id) => [...predefinedCategories, ...customCategories(id).filter((name) => !predefinedCategories.some((item) => categoryKey(item) === categoryKey(name)))]
+const categoryName = (value) => required(value, 'Categoria', 60).replace(/\s+/g, ' ')
 const activity = (group, user, action, detail = '') =>
   run('INSERT INTO activity(id,group_id,actor_id,action,detail) VALUES(?,?,?,?,?)', newId(), group, user?.id ?? null, action, detail)
 const userSummary = (user) => ({
@@ -181,6 +185,40 @@ function groupView(user, id) {
   return { group, participants, permissions }
 }
 app.get('/api/groups/:id', async (request) => groupView(requireUser(request), groupId(request)))
+app.get('/api/groups/:id/categories', async (request) => {
+  const user = requireUser(request), id = groupId(request)
+  requireGroup(user, id)
+  return { predefined: predefinedCategories, custom: customCategories(id).filter((name) => !predefinedCategories.includes(name)) }
+})
+app.post('/api/groups/:id/categories', async (request) => {
+  const user = requireUser(request), id = groupId(request)
+  const permissions = requireGroup(user, id)
+  if (!permissions.canAddExpense && !permissions.canManageGroup) throw new HttpError(403, 'Non puoi aggiungere categorie.')
+  const name = categoryName(request.body?.name)
+  const existing = similarCategory(name, groupCategories(id))
+  if (existing) throw new HttpError(409, `Esiste già una categoria simile: “${existing}”. Selezionala dall’elenco.`)
+  run('INSERT INTO group_categories(group_id,name) VALUES(?,?)', id, name)
+  activity(id, user, 'category.created', name)
+  return { name }
+})
+app.post('/api/groups/:id/categories/merge', async (request) => {
+  const user = requireUser(request), id = groupId(request)
+  requireGroup(user, id, 'canManageGroup')
+  const from = categoryName(request.body?.from), to = categoryName(request.body?.to)
+  const source = customCategories(id).find((name) => categoryKey(name) === categoryKey(from))
+  const target = groupCategories(id).find((name) => categoryKey(name) === categoryKey(to))
+  if (!source || !target || source === target) throw new HttpError(400, 'Scegli due categorie diverse del gruppo.')
+  transaction(() => {
+    run('UPDATE expenses SET category=? WHERE group_id=? AND category=?', target, id, source)
+    for (const rule of all('SELECT id,template_json FROM recurring_rules WHERE group_id=?', id)) {
+      const template = JSON.parse(rule.template_json)
+      if (template.category === source) run('UPDATE recurring_rules SET template_json=? WHERE id=?', JSON.stringify({ ...template, category: target }), rule.id)
+    }
+    run('DELETE FROM group_categories WHERE group_id=? AND name=?', id, source)
+    activity(id, user, 'category.merged', `${source} → ${target}`)
+  })
+  return { ok: true }
+})
 app.patch('/api/groups/:id', async (request) => {
   const user = requireUser(request), id = groupId(request)
   requireGroup(user, id, 'canManageGroup')
@@ -345,6 +383,9 @@ function expenseInput(body, id) {
   const shares = allocate(amountMinor, splitMode, body.shares)
   if (shares.some((row) => !validIds.has(row.participantId)))
     throw new HttpError(400, 'Quota assegnata a un partecipante esterno al gruppo.')
+  const requestedCategory = categoryName(body.category || 'Altro')
+  const category = body.isReimbursement ? 'Rimborso' : groupCategories(id).find((name) => categoryKey(name) === categoryKey(requestedCategory))
+  if (!category) throw new HttpError(400, 'Scegli una categoria dall’elenco o aggiungine una nuova.')
   let originalAmountMinor = null, originalCurrency = null, exchangeRate = null
   if (body.originalAmountMinor != null || body.originalCurrency || body.exchangeRate != null) {
     originalAmountMinor = Number(body.originalAmountMinor)
@@ -357,7 +398,7 @@ function expenseInput(body, id) {
   }
   return {
     title, amountMinor, date, payerId, splitMode, shares,
-    category: text(body.category || 'Other', 60) || 'Other',
+    category,
     notes: text(body.notes, 5000),
     isReimbursement: Number(Boolean(body.isReimbursement)),
     originalAmountMinor, originalCurrency, exchangeRate,

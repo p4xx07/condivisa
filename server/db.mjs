@@ -127,6 +127,18 @@ CREATE TABLE IF NOT EXISTS activity (
   `ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE sessions ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0;`,
   `ALTER TABLE groups ADD COLUMN simplify_settlements INTEGER NOT NULL DEFAULT 1;`,
+  `CREATE TABLE group_categories (
+  group_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  name TEXT NOT NULL COLLATE NOCASE,
+  PRIMARY KEY (group_id, name)
+);
+INSERT OR IGNORE INTO group_categories(group_id,name)
+  SELECT group_id,category FROM expenses WHERE is_reimbursement=0 AND TRIM(category) <> '';
+INSERT OR IGNORE INTO group_categories(group_id,name)
+  SELECT group_id, json_extract(template_json,'$.category') FROM recurring_rules
+  WHERE json_valid(template_json) AND json_extract(template_json,'$.category') IS NOT NULL
+    AND json_extract(template_json,'$.category') <> 'Rimborso';
+`,
 ]
 const currentVersion = db.prepare('PRAGMA user_version').get().user_version
 if (currentVersion > migrations.length)

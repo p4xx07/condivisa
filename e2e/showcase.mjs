@@ -52,6 +52,7 @@ try {
       shares: participants.map((participant) => ({ participantId: participant.id, value: 1 })), notes: '',
     })
   }
+  await api('POST', `/groups/${groupId}/categories`, { name: 'Alloggio' })
   const invite = await api('POST', `/groups/${groupId}/invites`, {})
   const guest = await request.newContext({ baseURL })
   const joined = await api('POST', `/invites/${invite.url.split('/').pop()}/register`, {
@@ -122,6 +123,11 @@ try {
   await phone.screenshot({ path: `${output}/saldi-amoled-mobile.png` })
   await phone.locator('.mobile-add').click()
   await phone.getByRole('dialog', { name: 'Nuova spesa' }).screenshot({ path: `${output}/nuova-spesa-amoled-mobile.png` })
+  await phone.getByRole('dialog', { name: 'Nuova spesa' }).getByRole('button', { name: 'Chiudi' }).first().click()
+  await phone.getByRole('button', { name: 'Altre azioni' }).click()
+  await phone.getByRole('button', { name: 'Categorie', exact: true }).click()
+  await phone.getByRole('dialog', { name: 'Categorie del gruppo' }).locator('.category-chips span').filter({ hasText: 'Alloggio' }).waitFor()
+  await phone.getByRole('dialog', { name: 'Categorie del gruppo' }).screenshot({ path: `${output}/categorie-amoled-mobile.png` })
 
   console.log(`Screenshot dimostrativi salvati in ${output}`)
 } finally {

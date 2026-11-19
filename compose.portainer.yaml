@@ -1,6 +1,6 @@
 services:
   app:
-    image: "${IMAGE:-ghcr.io/p4xx07/condivisa:v0.2.0}"
+    image: "${IMAGE:-ghcr.io/p4xx07/condivisa:v0.3.0}"
     restart: unless-stopped
     ports:
       - "127.0.0.1:${HOST_PORT:-3000}:3000"
